@@ -1,0 +1,14 @@
+torch==2.14.0
+transformers==5.17.0
+accelerate==1.15.0
+datasets==5.0.1
+scikit-learn==1.9.1
+pandas==3.0.6
+numpy==2.5.3
+networkx==3.7
+pgmpy==1.1.2
+matplotlib==3.11.2
+pytest==9.1.1
+jupytext==1.19.5
+ipykernel==7.3.0
+nbconvert==7.17.1
