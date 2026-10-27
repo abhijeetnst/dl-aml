@@ -1,0 +1,39 @@
+system,doc_id,cause,effect,prob,draft_verdict,evidence,team_verdict
+AML (pattern LR),0d42fe0540,A,D,0.8759710178830248,wrong,adjacent but direction not identified: A->D in only 3 of 4 consistent DAGs,wrong
+AML (pattern LR),0d42fe0540,A,E,0.8759710178830248,ok,E is a collider of A and C: 'A and C are independent given B.' and E is not in that set,ok
+AML (pattern LR),0d42fe0540,A,F,0.8619102640849988,ok,F is a collider of A and C: 'A and C are independent given B.' and F is not in that set,ok
+AML (pattern LR),0d42fe0540,A,B,0.8619102640849988,wrong,adjacent but direction not identified: A->B in only 2 of 4 consistent DAGs,wrong
+AML (pattern LR),0d42fe0540,B,C,0.8619102640849988,wrong,adjacent but direction not identified: B->C in only 3 of 4 consistent DAGs,wrong
+AML (pattern LR),0d42fe0540,C,F,0.8619102640849988,ok,F is a collider of C and A: 'C and A are independent given B.' and F is not in that set,ok
+AML (pattern LR),0d42fe0540,C,E,0.8619102640849988,ok,E is a collider of C and D: 'C and D are independent given A.' and E is not in that set,ok
+AML (pattern LR),0d42fe0540,D,E,0.8759710178830248,ok,E is a collider of D and C: 'D and C are independent given A.' and E is not in that set,ok
+AML (pattern LR),36356c9186,A,E,0.8690207738504497,ok,E is a collider of A and B: 'A is independent of B.' and E is not in that set,ok
+AML (pattern LR),36356c9186,A,D,0.8824562502692138,ok,direction forced in all 1 consistent DAGs (propagated from the colliders),ok
+AML (pattern LR),36356c9186,A,C,0.8824562502692138,ok,C is a collider of A and B: 'A is independent of B.' and C is not in that set,ok
+AML (pattern LR),36356c9186,B,E,0.8690207738504497,ok,E is a collider of B and A: 'B is independent of A.' and E is not in that set,ok
+AML (pattern LR),36356c9186,B,C,0.8690207738504497,ok,C is a collider of B and A: 'B is independent of A.' and C is not in that set,ok
+AML (pattern LR),36356c9186,C,D,0.8824562502692138,ok,direction forced in all 1 consistent DAGs (propagated from the colliders),ok
+AML (pattern LR),405a192ebb,A,B,0.8690207738504497,wrong,adjacent but direction not identified: A->B in only 2 of 6 consistent DAGs,wrong
+AML (pattern LR),405a192ebb,A,D,0.8824562502692138,ok,D is a collider of A and C: 'A and C are independent given B.' and D is not in that set,ok
+AML (pattern LR),405a192ebb,A,E,0.8824562502692138,ok,E is a collider of A and C: 'A and C are independent given B.' and E is not in that set,ok
+AML (pattern LR),405a192ebb,B,C,0.8690207738504497,wrong,adjacent but direction not identified: B->C in only 4 of 6 consistent DAGs,wrong
+AML (pattern LR),405a192ebb,C,E,0.8824562502692138,ok,E is a collider of C and A: 'C and A are independent given B.' and E is not in that set,ok
+AML (pattern LR),405a192ebb,C,D,0.8824562502692138,ok,D is a collider of C and A: 'C and A are independent given B.' and D is not in that set,ok
+AML (pattern LR),405a192ebb,D,E,0.8946805789472054,wrong,adjacent but direction not identified: D->E in only 3 of 6 consistent DAGs,wrong
+DistilBERT,36356c9186,A,E,0.8663746118545532,ok,E is a collider of A and B: 'A is independent of B.' and E is not in that set,ok
+DistilBERT,36356c9186,A,D,0.8220590353012085,ok,direction forced in all 1 consistent DAGs (propagated from the colliders),ok
+DistilBERT,36356c9186,A,C,0.2746154069900512,ok,C is a collider of A and B: 'A is independent of B.' and C is not in that set,ok
+DistilBERT,36356c9186,B,E,0.5606479644775391,ok,E is a collider of B and A: 'B is independent of A.' and E is not in that set,ok
+DistilBERT,36356c9186,B,D,0.5392704010009766,wrong,"not adjacent: the premise states 'B and D are independent given A, C.'",wrong
+DistilBERT,36356c9186,B,C,0.6565991044044495,ok,C is a collider of B and A: 'B is independent of A.' and C is not in that set,ok
+DistilBERT,36356c9186,C,E,0.6102842092514038,wrong,"not adjacent: the premise states 'C and E are independent given A, B.'",wrong
+DistilBERT,36356c9186,C,D,0.54985111951828,ok,direction forced in all 1 consistent DAGs (propagated from the colliders),ok
+DistilBERT,36356c9186,D,E,0.5765621662139893,wrong,"not adjacent: the premise states 'D and E are independent given A, B.'",wrong
+DistilBERT,405a192ebb,A,D,0.5062346458435059,ok,D is a collider of A and C: 'A and C are independent given B.' and D is not in that set,ok
+DistilBERT,405a192ebb,A,E,0.7166809439659119,ok,E is a collider of A and C: 'A and C are independent given B.' and E is not in that set,ok
+DistilBERT,405a192ebb,B,C,0.2178330570459365,wrong,adjacent but direction not identified: B->C in only 4 of 6 consistent DAGs,wrong
+DistilBERT,405a192ebb,B,D,0.4117525517940521,wrong,"not adjacent: the premise states 'B and D are independent given A, C.'",wrong
+DistilBERT,405a192ebb,B,E,0.3997785151004791,wrong,"not adjacent: the premise states 'B and E are independent given A, C.'",wrong
+DistilBERT,405a192ebb,C,E,0.4572851657867431,ok,E is a collider of C and A: 'C and A are independent given B.' and E is not in that set,ok
+DistilBERT,405a192ebb,C,D,0.4066345691680908,ok,D is a collider of C and A: 'C and A are independent given B.' and D is not in that set,ok
+DistilBERT,405a192ebb,D,E,0.4856670796871185,wrong,adjacent but direction not identified: D->E in only 3 of 6 consistent DAGs,wrong
