@@ -1,5 +1,7 @@
 """DL model: fine-tune DistilBERT on (premise, hypothesis) -> valid / not valid.
 Train from the shell (long job):  python -m c2c.bert"""
+import os
+
 import numpy as np
 import pandas as pd
 import torch
@@ -7,6 +9,7 @@ from datasets import Dataset
 from sklearn.metrics import f1_score
 from transformers import (AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding, Trainer,
                           TrainingArguments)
+from transformers.trainer_utils import get_last_checkpoint
 
 BASE = "distilbert-base-uncased"
 MAX_LEN = 512
@@ -36,7 +39,9 @@ def train_bert(train_df, val_df, out_dir=MODEL_DIR, epochs=2, seed=42, max_steps
         model=model, args=args, train_dataset=to_dataset(tok, train_df), eval_dataset=to_dataset(tok, val_df),
         data_collator=DataCollatorWithPadding(tok), processing_class=tok,
         compute_metrics=lambda p: {"f1": f1_score(p.label_ids, p.predictions.argmax(-1))})
-    trainer.train()
+    # an interrupted run picks up from its last epoch checkpoint; delete out_dir to retrain from scratch
+    last = get_last_checkpoint(out_dir) if os.path.isdir(out_dir) else None
+    trainer.train(resume_from_checkpoint=last)
     trainer.save_model(out_dir)
 
 
