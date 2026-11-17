@@ -1,5 +1,9 @@
 # Neuro-Symbolic Causal Inference on Corr2Cause (DL/AML Project 1)
 
+[![tests](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml/badge.svg)](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml)
+
+Live demo: https://huggingface.co/spaces/abhijeetnst/corr2cause-demo
+
 Text → candidate causal triples (AML baseline vs DistilBERT) → reviewed DAG per premise →
 pgmpy Bayesian network → intervention queries. A PC-algorithm oracle is the symbolic reference.
 
@@ -20,20 +24,48 @@ c2c/bn.py      gold DAG + noisy-OR CPDs → 5,000 simulated rows → fit each sy
                → ATE = P(Y=1 | do(X=1)) − P(Y=1 | do(X=0)), compared with the gold network
   ▼
 project1_causal.py / .ipynb  runs every stage → results/*.csv, results/dag_comparison.png
+
+c2c/text.py    free English text → (cause, verb, effect) triples → DAG
+app.py         Gradio demo: the three systems on a Corr2Cause row; free text → DAG → ATE
 ```
-Each `c2c/` module has its own test file in `tests/`.
+Each `c2c/` module and `app.py` has its own test file in `tests/`.
 
 ## Reproduce
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest -q                                   # 25 tests
+pytest tests -q                             # 32 tests
 python -m c2c.bert                          # ~1.5 h on an Apple M3 Pro (MPS); resumes if interrupted
 jupytext --to ipynb project1_causal.py
 jupyter nbconvert --to notebook --execute --inplace project1_causal.ipynb
 ```
 
 Edit `project1_causal.py`, then regenerate the `.ipynb`; never hand-edit the notebook file.
+
+## Run the demo locally
+```bash
+python scripts/export_artifacts.py   # artifacts/aml.joblib + thresholds.json (needs models/distilbert-c2c)
+python app.py                        # http://127.0.0.1:7860
+```
+
+## Deploy
+```bash
+hf auth login
+bash scripts/deploy_space.sh   # model + artifacts → abhijeetnst/distilbert-c2c, app → abhijeetnst/corr2cause-demo
+```
+
+## Free-text extraction
+`c2c/text.py` parses English sentences with spaCy (`en_core_web_sm`) and keeps verbs from a fixed causal list
+("causes", "leads to", "raises", "prevents", "is caused by", ...). Subject and object become cause and effect; noun
+phrases are lemmatised so "floods" and "flood" are one node. Triples become a DAG with the same review rules as
+`c2c/graph.py`: one direction per pair (the earlier sentence wins), and a cycle loses the edge from the latest
+sentence. The demo then puts a noisy-OR network on that DAG and reports the ATE for any pair.
+
+Limits:
+- Pattern-based and English only; causal verbs outside the list are ignored.
+- One cause and one effect per verb; "X and Y cause Z" keeps only the first noun of each side.
+- The small spaCy model misparses some verbs (e.g. "results in" yields no triple).
+- Noisy-OR assumes every edge raises its effect; "reduces" or "prevents" is treated as a positive cause.
 
 ## Results
 Triple extraction (test / renamed test), graph edges and intervention queries: see
@@ -63,8 +95,9 @@ renamed test AML 0.238, DistilBERT 0.189, oracle 0.004.
 ## Review sheets
 `review/edge_review.csv` and `review/label_audit_review.csv` hold a verdict and the premise evidence for each row
 (the independence statement or collider that decides it). The `draft_verdict` column was derived from that evidence
-with the oracle's equivalence-class reasoning, so it is not independent of the oracle; fill `team_verdict` after
-checking each row yourselves before the report calls it a human review. The notebook never writes to `review/`, so re-running it keeps these files.
+with the oracle's equivalence-class reasoning, so it is not independent of the oracle. `team_verdict` is blank until
+the team fills it per `review/REVIEW_CHECKLIST.md`; only then can the report call it a human review.
+The notebook never writes to `review/`, so re-running it keeps these files.
 
 ## Data caveats we found
 - The official splits leak: 3 validation premises also occur in test, 2 in train. We removed them from validation/train.
@@ -79,7 +112,7 @@ Team T043, Section D.
 
 | Member | Contribution |
 |---|---|
-| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, presentation and report |
+| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Gradio demo and Space deploy (`app.py`, `scripts/`), CI, presentation and report |
 | Prashant Pandey | Symbolic oracle (`c2c/oracle.py`: PC algorithm, Markov equivalence class, entailment) and the label audit |
 | Divyanshi Khanka | AML baseline (`c2c/aml.py`), graph stage (`c2c/graph.py`: review gate, DAG per premise, edge metrics) and the edge review |
 | Shubham Jain | DistilBERT fine-tuning and inference (`c2c/bert.py`), resumable training |
