@@ -12,7 +12,7 @@ pytest==9.1.1
 jupytext==1.19.5
 ipykernel==7.3.0
 nbconvert==7.17.1
-gradio==6.32.0
+streamlit==1.67.0
 spacy==3.8.18
 joblib==1.6.0
 huggingface_hub==1.33.0

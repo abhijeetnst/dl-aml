@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml/badge.svg)](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml)
 
-Live demo: https://huggingface.co/spaces/abhijeetnst/corr2cause-demo
+Live demo: https://abhijeetnst-dl-aml.streamlit.app (Streamlit Community Cloud)
 
 Text → candidate causal triples (AML baseline vs DistilBERT) → reviewed DAG per premise →
 pgmpy Bayesian network → intervention queries. A PC-algorithm oracle is the symbolic reference.
@@ -26,15 +26,16 @@ c2c/bn.py      gold DAG + noisy-OR CPDs → 5,000 simulated rows → fit each sy
 project1_causal.py / .ipynb  runs every stage → results/*.csv, results/dag_comparison.png
 
 c2c/text.py    free English text → (cause, verb, effect) triples → DAG
-app.py         Gradio demo: the three systems on a Corr2Cause row; free text → DAG → ATE
+c2c/demo.py             demo logic: the three systems on a Corr2Cause row; free text → DAG → ATE
+demo/streamlit_app.py   Streamlit UI over c2c/demo.py (Streamlit Community Cloud entrypoint)
 ```
-Each `c2c/` module and `app.py` has its own test file in `tests/`.
+Each `c2c/` module has its own test file in `tests/`; `tests/test_demo.py` also runs the Streamlit app.
 
 ## Reproduce
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest tests -q                             # 32 tests
+pytest tests -q                             # 33 tests
 python -m c2c.bert                          # ~1.5 h on an Apple M3 Pro (MPS); resumes if interrupted
 jupytext --to ipynb project1_causal.py
 jupyter nbconvert --to notebook --execute --inplace project1_causal.ipynb
@@ -44,15 +45,20 @@ Edit `project1_causal.py`, then regenerate the `.ipynb`; never hand-edit the not
 
 ## Run the demo locally
 ```bash
-python scripts/export_artifacts.py   # artifacts/aml.joblib + thresholds.json (needs models/distilbert-c2c)
-python app.py                        # http://127.0.0.1:7860
+python scripts/export_artifacts.py   # optional: local artifacts/; otherwise they download from the Hub
+streamlit run demo/streamlit_app.py  # http://localhost:8501
 ```
+The model is read from `models/distilbert-c2c` if present, else from `abhijeetnst/distilbert-c2c` on the Hub
+(override with `MODEL_REPO`).
 
 ## Deploy
+Model and artifacts go to the Hub model repo `abhijeetnst/distilbert-c2c`:
 ```bash
 hf auth login
-bash scripts/deploy_space.sh   # model + artifacts → abhijeetnst/distilbert-c2c, app → abhijeetnst/corr2cause-demo
+bash scripts/upload_model.sh
 ```
+App: on share.streamlit.io choose New app → repository `abhijeetnst/dl-aml`, branch `main`, main file
+`demo/streamlit_app.py`, Python 3.12 (under Advanced settings). It installs `demo/requirements.txt` (CPU-only torch).
 
 ## Free-text extraction
 `c2c/text.py` parses English sentences with spaCy (`en_core_web_sm`) and keeps verbs from a fixed causal list
@@ -112,7 +118,7 @@ Team T043, Section D.
 
 | Member | Contribution |
 |---|---|
-| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Gradio demo and Space deploy (`app.py`, `scripts/`), CI, presentation and report |
+| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Streamlit demo and deploy (`c2c/demo.py`, `demo/`, `scripts/`), CI, presentation and report |
 | Prashant Pandey | Symbolic oracle (`c2c/oracle.py`: PC algorithm, Markov equivalence class, entailment) and the label audit |
 | Divyanshi Khanka | AML baseline (`c2c/aml.py`), graph stage (`c2c/graph.py`: review gate, DAG per premise, edge metrics) and the edge review |
 | Shubham Jain | DistilBERT fine-tuning and inference (`c2c/bert.py`), resumable training |

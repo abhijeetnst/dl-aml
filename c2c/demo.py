@@ -1,12 +1,10 @@
-"""Gradio demo: Corr2Cause checker (AML, DistilBERT, symbolic oracle) and free-text causal extraction + do-queries."""
-import functools
+"""UI-independent demo logic: Corr2Cause checks (AML, DistilBERT, symbolic oracle) and free-text interventions."""
 import io
 import json
 import os
 import pathlib
 import random
 
-import gradio as gr
 import joblib
 import networkx as nx
 import pandas as pd
@@ -23,34 +21,31 @@ from c2c.data import parse_hypothesis, parse_premise, rename_variables
 from c2c.oracle import entailed, equivalence_class, pc_pattern
 from c2c.text import extract_triples, triples_to_dag
 
-MODEL_REPO = os.environ.get("MODEL_REPO", "models/distilbert-c2c")
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+HUB_REPO = "abhijeetnst/distilbert-c2c"
+LOCAL_MODEL = ROOT / "models" / "distilbert-c2c"
+MODEL_REPO = os.environ.get("MODEL_REPO", str(LOCAL_MODEL) if LOCAL_MODEL.is_dir() else HUB_REPO)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MAX_VARS = 6  # the dataset's largest premise; the equivalence class is brute-forced over 2^edges orientations
 
 
 def artifact(name: str) -> str:
-    local = pathlib.Path("artifacts") / name
-    return str(local) if local.exists() else hf_hub_download(MODEL_REPO, name)
+    local = ROOT / "artifacts" / name
+    if local.exists():
+        return str(local)
+    return hf_hub_download(HUB_REPO if pathlib.Path(MODEL_REPO).is_dir() else MODEL_REPO, name)
 
 
-@functools.cache
-def aml_model():
-    return joblib.load(artifact("aml.joblib"))
-
-
-@functools.cache
-def thresholds() -> dict:
-    return json.loads(pathlib.Path(artifact("thresholds.json")).read_text())
-
-
-@functools.cache
-def bert_model():
+def load_models():
+    """-> (AML pipeline, thresholds dict, (tokenizer, DistilBERT))."""
     tok = AutoTokenizer.from_pretrained(MODEL_REPO)
-    return tok, AutoModelForSequenceClassification.from_pretrained(MODEL_REPO).to(DEVICE).eval()
+    bert = AutoModelForSequenceClassification.from_pretrained(MODEL_REPO).to(DEVICE).eval()
+    return (joblib.load(artifact("aml.joblib")), json.loads(pathlib.Path(artifact("thresholds.json")).read_text()),
+            (tok, bert))
 
 
-def bert_prob(premise: str, hypothesis: str) -> float:
-    tok, model = bert_model()
+def bert_prob(premise: str, hypothesis: str, bert) -> float:
+    tok, model = bert
     enc = encode(tok, [premise], [hypothesis], return_tensors="pt").to(DEVICE)
     with torch.no_grad():
         return float(model(**enc).logits.softmax(-1)[0, 1])
@@ -94,18 +89,14 @@ def parse(premise: str, hypothesis: str):
     return variables, indep, triple
 
 
-def check(premise: str, hypothesis: str):
-    """-> (scores table, markdown summary, PC pattern image)."""
-    try:
-        variables, indep, (relation, x, y) = parse(premise, hypothesis)
-    except ValueError as e:
-        gr.Warning(str(e))
-        return pd.DataFrame(), f"**Could not parse the input.** {e}", None
+def check(premise: str, hypothesis: str, models):
+    """-> (scores table, markdown summary, PC pattern image). `models` is load_models()'s result."""
+    variables, indep, (relation, x, y) = parse(premise, hypothesis)
     premise, hypothesis = premise.strip(), hypothesis.strip()
-    th = thresholds()
+    aml_model, th, bert = models
     row = pd.DataFrame({"premise": [premise], "hypothesis": [hypothesis]})
-    probs = {"AML (pattern LR)": (aml.predict_proba(aml_model(), row)[0], th["aml"]),
-             "DistilBERT": (bert_prob(premise, hypothesis), th["bert"]),
+    probs = {"AML (pattern LR)": (aml.predict_proba(aml_model, row)[0], th["aml"]),
+             "DistilBERT": (bert_prob(premise, hypothesis, bert), th["bert"]),
              "Symbolic oracle": (float(entailed(premise, hypothesis)), 1.0)}
     table = pd.DataFrame([{"system": k, "P(valid)": round(p, 3), "threshold": round(t, 3),
                            "verdict": "valid" if p >= t else "not valid"} for k, (p, t) in probs.items()])
@@ -120,33 +111,27 @@ def check(premise: str, hypothesis: str):
 
 
 def rename(premise: str, hypothesis: str):
-    try:
-        parse(premise, hypothesis)
-    except ValueError as e:
-        gr.Warning(str(e))
-        return premise, hypothesis
+    parse(premise, hypothesis)
     return rename_variables(premise.strip(), hypothesis.strip(), seed=random.randrange(10**9))
 
 
 def extract(text: str):
+    """-> (triples table, DAG image, node names, default (cause, effect))."""
     triples = extract_triples(text)
     if triples.empty:
-        gr.Warning("No causal sentences found. Try 'X causes Y', 'X leads to Y' or 'Y is caused by X'.")
+        raise ValueError("No causal sentences found. Try 'X causes Y', 'X leads to Y' or 'Y is caused by X'.")
     g = triples_to_dag(triples)
     nodes = sorted(g.nodes)
-    table = triples[["sentence", "cause", "verb", "effect"]]
     for depth, layer in enumerate(nx.topological_generations(g)):  # causes on the left, effects to the right
         g.add_nodes_from(layer, depth=depth)
-    img = draw(nodes, g.edges, title="Causal graph from the text",
-               pos=nx.multipartite_layout(g, subset_key="depth")) if nodes else None
-    cause, effect = (list(g.edges)[0] if g.edges else (None, None))
-    return table, img, gr.Dropdown(choices=nodes, value=cause), gr.Dropdown(choices=nodes, value=effect)
+    img = draw(nodes, g.edges, title="Causal graph from the text", pos=nx.multipartite_layout(g, subset_key="depth"))
+    return triples[["sentence", "cause", "verb", "effect"]], img, nodes, next(iter(g.edges))
 
 
 def intervene(text: str, x: str, y: str) -> str:
     g = triples_to_dag(extract_triples(text))
     if x not in g or y not in g or x == y:
-        return "Pick two different variables from the extracted graph (press Extract after editing the text)."
+        raise ValueError("Pick two different variables from the extracted graph.")
     effect = ate(noisy_or_bn(g), x, y)
     return (f"**ATE** = P({y}=1 | do({x}=1)) − P({y}=1 | do({x}=0)) = **{effect:+.3f}**\n\n"
             "Every variable is binary and each cause independently switches its effect on with probability 0.8 "
@@ -178,47 +163,3 @@ EXAMPLES = [
 ]
 DEFAULT_TEXT = ("Heavy storms cause floods. Floods lead to crop failures. Crop failures raise food prices. "
                 "Food prices trigger protests. Heavy storms also cause power outages.")
-HEADER = """# Corr2Cause: neuro-symbolic causal inference
-Does a set of correlation and independence statements entail a causal claim? A pattern-feature logistic regression
-(AML) and a fine-tuned DistilBERT read the text; a PC-algorithm oracle reasons over the Markov equivalence class.
-
-| Test set, positive-class F1 | AML | DistilBERT | Symbolic oracle |
-|---|---|---|---|
-| original letters | 0.617 | 0.605 | **0.871** |
-| variables renamed | 0.279 | 0.264 | **0.871** |
-| DAG edge F1 | 0.703 | 0.610 | **0.942** |
-
-Text models learn the dataset's alphabetical-order shortcut; the oracle does not depend on letter names.
-Code and report: [github.com/abhijeetnst/dl-aml](https://github.com/abhijeetnst/dl-aml)"""
-
-with gr.Blocks(title="Corr2Cause: neuro-symbolic causal inference") as demo:
-    gr.Markdown(HEADER)
-    with gr.Tab("Corr2Cause"):
-        premise = gr.Textbox(label="Premise", lines=4)
-        hypothesis = gr.Textbox(label="Hypothesis")
-        gr.Examples(EXAMPLES, inputs=[premise, hypothesis], label="Test-set examples")
-        with gr.Row():
-            check_btn = gr.Button("Check", variant="primary")
-            rename_btn = gr.Button("Rename variables")
-        scores = gr.Dataframe(label="Scores")
-        with gr.Row():
-            summary = gr.Markdown()
-            pattern = gr.Image(label="PC pattern", type="pil")
-        check_btn.click(check, [premise, hypothesis], [scores, summary, pattern])
-        rename_btn.click(rename, [premise, hypothesis], [premise, hypothesis])
-    with gr.Tab("Free text"):
-        text = gr.Textbox(label="Text", value=DEFAULT_TEXT, lines=5)
-        extract_btn = gr.Button("Extract", variant="primary")
-        triples = gr.Dataframe(label="Causal triples")
-        dag = gr.Image(label="Causal graph", type="pil")
-        with gr.Row():
-            cause = gr.Dropdown(label="Cause X")
-            effect = gr.Dropdown(label="Effect Y")
-        intervene_btn = gr.Button("Intervene")
-        ate_out = gr.Markdown()
-        extract_btn.click(extract, text, [triples, dag, cause, effect])
-        intervene_btn.click(intervene, [text, cause, effect], ate_out)
-
-if __name__ == "__main__":
-    aml_model(), thresholds(), bert_model()  # load once at startup, not on the first click
-    demo.launch()
