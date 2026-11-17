@@ -1,5 +1,7 @@
-.venv/
-models/
+.venv
+models
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
+artifacts/
+.cli-logs/
