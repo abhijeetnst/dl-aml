@@ -18,7 +18,7 @@ HYPOTHESES = [
 
 
 def load_splits() -> dict[str, pd.DataFrame]:
-    from datasets import load_dataset  # lazy: the demo parses text and never loads the dataset
+    from datasets import load_dataset  # lazy: the app parses text and never loads the dataset
     ds = load_dataset("causalnlp/corr2cause")
     out = {}
     for split in ("train", "validation", "test"):

@@ -1,5 +1,5 @@
 """Regenerate the app screenshots in docs/img (1400 px wide) from a running app; also a browser smoke test.
-Usage: streamlit run demo/streamlit_app.py --server.headless true &   then   python scripts/screenshots.py [URL]
+Usage: streamlit run app/streamlit_app.py --server.headless true &   then   python scripts/screenshots.py [URL]
 Needs playwright (pip install playwright && playwright install chromium)."""
 import pathlib
 import sys
@@ -9,7 +9,7 @@ from playwright.sync_api import expect, sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from c2c import demo  # noqa: E402
+from c2c import service  # noqa: E402
 
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8501"
 OUT = ROOT / "docs/img"
@@ -30,7 +30,7 @@ def shot(page, name):
 def main():
     OUT.mkdir(exist_ok=True)
     sample = pathlib.Path(tempfile.mkdtemp()) / "corr2cause_sample.csv"
-    sample.write_bytes(demo.sample_csv())
+    sample.write_bytes(service.sample_csv())
     with sync_playwright() as p:
         page = p.chromium.launch().new_page(viewport={"width": 1400, "height": 1000})
         page.goto(URL)
@@ -39,7 +39,7 @@ def main():
 
         page.get_by_test_id("stSelectbox").first.click()
         page.get_by_role("option").first.click()
-        expect(page.get_by_label("Hypothesis")).to_have_value(demo.EXAMPLES[0][1])
+        expect(page.get_by_label("Hypothesis")).to_have_value(service.EXAMPLES[0][1])
         page.get_by_role("button", name="Check").click()
         expect(page.get_by_text("Parsed triple")).to_be_visible(timeout=180_000)
         shot(page, "app_corr2cause.png")

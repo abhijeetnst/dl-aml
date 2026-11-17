@@ -26,10 +26,10 @@ c2c/bn.py      gold DAG + noisy-OR CPDs → 5,000 simulated rows → fit each sy
 project1_causal.py / .ipynb  runs every stage → results/*.csv, results/dag_comparison.png
 
 c2c/text.py    free English text → (cause, verb, effect) triples → DAG
-c2c/demo.py             app logic (no UI): the three systems on a Corr2Cause row or a CSV batch; free text → DAG → ATE
-demo/streamlit_app.py   Streamlit UI over c2c/demo.py (Streamlit Community Cloud entrypoint)
+c2c/service.py          app logic (no UI): the three systems on a Corr2Cause row or a CSV batch; free text → DAG → ATE
+app/streamlit_app.py    Streamlit UI over c2c/service.py (Streamlit Community Cloud entrypoint)
 ```
-Each `c2c/` module has its own test file in `tests/`; `tests/test_demo.py` also runs the Streamlit app.
+Each `c2c/` module has its own test file in `tests/`; `tests/test_service.py` also runs the Streamlit app.
 
 ## Reproduce
 ```bash
@@ -60,7 +60,7 @@ with their type and traceback only.
 ## Run the app locally
 ```bash
 python scripts/export_artifacts.py   # optional: local artifacts/; otherwise they download from the Hub
-streamlit run demo/streamlit_app.py  # http://localhost:8501
+streamlit run app/streamlit_app.py   # http://localhost:8501
 python scripts/screenshots.py        # with the app running: browser check + docs/img/app_*.png (needs playwright)
 ```
 The model is read from `models/distilbert-c2c` if present, else from `abhijeetnst/distilbert-c2c` on the Hub
@@ -73,7 +73,7 @@ hf auth login
 bash scripts/upload_model.sh
 ```
 App: on share.streamlit.io choose New app → repository `abhijeetnst/dl-aml`, branch `main`, main file
-`demo/streamlit_app.py`, Python 3.12 (under Advanced settings). It installs `demo/requirements.txt` (CPU-only torch).
+`app/streamlit_app.py`, Python 3.12 (under Advanced settings). It installs `app/requirements.txt` (CPU-only torch).
 Theme, the 2 MB upload cap and disabled usage stats are in `.streamlit/config.toml`.
 
 Keep-alive: Community Cloud puts apps to sleep after a period without traffic. `.github/workflows/keepalive.yml` runs
@@ -147,7 +147,7 @@ Team T043, Section D.
 
 | Member | Contribution |
 |---|---|
-| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Streamlit app and deploy (`c2c/demo.py`, `demo/`, `scripts/`), CI, presentation and report |
+| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Streamlit app and deploy (`c2c/service.py`, `app/`, `scripts/`), CI, presentation and report |
 | Prashant Pandey | Symbolic oracle (`c2c/oracle.py`: PC algorithm, Markov equivalence class, entailment) and the label audit |
 | Divyanshi Khanka | AML baseline (`c2c/aml.py`), graph stage (`c2c/graph.py`: review gate, DAG per premise, edge metrics) and the edge review |
 | Shubham Jain | DistilBERT fine-tuning and inference (`c2c/bert.py`), resumable training |

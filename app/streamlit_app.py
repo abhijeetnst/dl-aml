@@ -9,7 +9,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import streamlit as st  # noqa: E402
 
-from c2c import demo  # noqa: E402
+from c2c import service  # noqa: E402
 
 log = logging.getLogger("corr2cause.app")
 if not log.handlers:  # the script reruns on every interaction; attach the stderr handler once per process
@@ -46,7 +46,7 @@ sentences into a graph you can intervene on.
 
 ### Limits
 - Corr2Cause tab: premises must follow the Corr2Cause template language.
-- At most {demo.MAX_VARS} variables per premise.
+- At most {service.MAX_VARS} variables per premise.
 - Free text: a pattern-based English extractor with a fixed list of causal verbs.
 - ATEs assume noisy-OR: every edge raises its effect.
 
@@ -72,7 +72,7 @@ def guard(action: str):
 
 @st.cache_resource(show_spinner=False)
 def _load_models():
-    return demo.load_models()
+    return service.load_models()
 
 
 def models():
@@ -83,13 +83,13 @@ def models():
 def fill_example():
     i = st.session_state.example
     if i is not None:
-        st.session_state.premise, st.session_state.hypothesis = demo.EXAMPLES[i]
+        st.session_state.premise, st.session_state.hypothesis = service.EXAMPLES[i]
 
 
 def rename():
     try:
-        st.session_state.premise, st.session_state.hypothesis = demo.rename(st.session_state.premise,
-                                                                             st.session_state.hypothesis)
+        st.session_state.premise, st.session_state.hypothesis = service.rename(st.session_state.premise,
+                                                                                st.session_state.hypothesis)
     except ValueError as e:
         st.session_state.rename_error = str(e)
     except Exception as e:
@@ -99,18 +99,18 @@ def rename():
 
 def batch_tab():
     st.markdown(f"Upload a CSV with columns `premise` and `hypothesis`, plus an optional 0/1 `label` for precision, "
-                f"recall and F1. Up to {demo.MAX_ROWS} rows and {demo.MAX_BYTES // 2**20} MB.")
-    st.download_button("Download sample CSV", demo.sample_csv(), "corr2cause_sample.csv", "text/csv",
+                f"recall and F1. Up to {service.MAX_ROWS} rows and {service.MAX_BYTES // 2**20} MB.")
+    st.download_button("Download sample CSV", service.sample_csv(), "corr2cause_sample.csv", "text/csv",
                        on_click="ignore")
     upload = st.file_uploader("CSV file", type="csv")
     if upload is None:
         return
     if st.session_state.get("batch_id") != upload.file_id:
         st.session_state.pop("batch", None)
-        df = demo.read_csv(upload.getvalue())
+        df = service.read_csv(upload.getvalue())
         loaded = models()
         bar = st.progress(0.0, text="Scoring with DistilBERT…")
-        st.session_state.batch = demo.score_batch(
+        st.session_state.batch = service.score_batch(
             df, loaded, progress=lambda done, total: bar.progress(done / total, text=f"DistilBERT {done}/{total}"))
         st.session_state.batch_id = upload.file_id
         bar.empty()
@@ -128,26 +128,26 @@ def batch_tab():
 st.set_page_config(page_title="Corr2Cause causal inference", page_icon="🔗", layout="wide")
 with st.sidebar:
     st.markdown(SIDEBAR)
-    st.caption(f"Version {demo.version()}")
+    st.caption(f"Version {service.version()}")
 st.markdown(HEADER)
 tab_c2c, tab_batch, tab_text = st.tabs(["Corr2Cause", "Batch", "Free text"])
 
 with tab_text:  # rendered first so a model load or batch run in the other tabs never holds it up
-    text = st.text_area("Text", value=demo.DEFAULT_TEXT, height=120, max_chars=demo.MAX_TEXT)
+    text = st.text_area("Text", value=service.DEFAULT_TEXT, height=120, max_chars=service.MAX_TEXT)
     with guard("extract"):
-        triples, dag, nodes, (x0, y0) = demo.extract(text)
+        triples, dag, nodes, (x0, y0) = service.extract(text)
         st.dataframe(triples, hide_index=True)
         st.image(dag, caption="Causal graph")
         col1, col2 = st.columns(2)
         x = col1.selectbox("Cause X", nodes, index=nodes.index(x0))
         y = col2.selectbox("Effect Y", nodes, index=nodes.index(y0))
         with guard("intervene"):
-            st.markdown(demo.intervene(text, x, y))
+            st.markdown(service.intervene(text, x, y))
 
 with tab_c2c:
-    st.selectbox("Test-set examples", range(len(demo.EXAMPLES)), index=None, key="example", on_change=fill_example,
-                 format_func=lambda i: demo.EXAMPLES[i][1], placeholder="Pick an example to fill the inputs")
-    st.text_area("Premise", key="premise", height=120, max_chars=demo.MAX_PREMISE)
+    st.selectbox("Test-set examples", range(len(service.EXAMPLES)), index=None, key="example", on_change=fill_example,
+                 format_func=lambda i: service.EXAMPLES[i][1], placeholder="Pick an example to fill the inputs")
+    st.text_area("Premise", key="premise", height=120, max_chars=service.MAX_PREMISE)
     st.text_input("Hypothesis", key="hypothesis", max_chars=300)
     left, right = st.columns([1, 6])
     clicked = left.button("Check", type="primary")
@@ -156,8 +156,8 @@ with tab_c2c:
         st.warning(msg)
     if clicked:
         with guard("check"):
-            demo.parse(st.session_state.premise, st.session_state.hypothesis)  # bad input never waits on the models
-            table, summary, img = demo.check(st.session_state.premise, st.session_state.hypothesis, models())
+            service.parse(st.session_state.premise, st.session_state.hypothesis)  # bad input never waits on the models
+            table, summary, img = service.check(st.session_state.premise, st.session_state.hypothesis, models())
             st.dataframe(table, hide_index=True)
             col1, col2 = st.columns(2)
             col1.markdown(summary)

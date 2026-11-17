@@ -401,7 +401,7 @@ claims, or type plain English and ask an intervention question, with nothing to 
 models from this report unchanged, so its scores are the scores in Section 4.</p>
 
 <h3>5.1 Architecture</h3>
-<p>A thin Streamlit interface sits on <span class="code">c2c/demo.py</span>, which imports no UI code, uses the
+<p>A thin Streamlit interface sits on <span class="code">c2c/service.py</span>, which imports no UI code, uses the
 notebook's strict parsers and modules, and is tested directly (Table 5). The fine-tuned DistilBERT and its
 tokenizer, the fitted AML pipeline and the two thresholds live in the Hugging Face Hub model repository
 <span class="code">abhijeetnst/distilbert-c2c</span>; the app downloads them on first start and shares one copy among all
@@ -411,11 +411,11 @@ for DistilBERT. Community Cloud has no GPU, so DistilBERT runs on CPU-only PyTor
   <table class="data">
     <thead><tr><th style="width:84pt">Part</th><th style="width:146pt">Where</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td>Interface</td><td>demo/streamlit_app.py</td><td>Three tabs, inputs, result tables and graph images; readable messages for bad input</td></tr>
-      <tr><td>App logic</td><td>c2c/demo.py</td><td>Parsing and limits, the three systems, batch scoring and metrics, free text &rarr; DAG &rarr; ATE</td></tr>
+      <tr><td>Interface</td><td>app/streamlit_app.py</td><td>Three tabs, inputs, result tables and graph images; readable messages for bad input</td></tr>
+      <tr><td>App logic</td><td>c2c/service.py</td><td>Parsing and limits, the three systems, batch scoring and metrics, free text &rarr; DAG &rarr; ATE</td></tr>
       <tr><td>Free-text extractor</td><td>c2c/text.py</td><td>spaCy dependency parse &rarr; (cause, verb, effect) triples &rarr; reviewed DAG</td></tr>
       <tr><td>Models</td><td>Hub: abhijeetnst/distilbert-c2c</td><td>DistilBERT weights and tokenizer, aml.joblib, thresholds.json</td></tr>
-      <tr><td>Hosting</td><td>Streamlit Community Cloud</td><td>Builds from the GitHub main branch with Python 3.12 and demo/requirements.txt</td></tr>
+      <tr><td>Hosting</td><td>Streamlit Community Cloud</td><td>Builds from the GitHub main branch with Python 3.12 and app/requirements.txt</td></tr>
       <tr><td>Checks</td><td>GitHub Actions</td><td>Test suite on every push and pull request; keep-alive visit every 6 hours</td></tr>
     </tbody>
   </table>
@@ -573,13 +573,13 @@ algorithms.</p>
 <p>Code layout: <span class="code">c2c/data.py</span> (loading, splits, parsers, renaming), <span class="code">c2c/aml.py</span>, <span class="code">c2c/bert.py</span>, <span class="code">c2c/oracle.py</span>,
 <span class="code">c2c/graph.py</span>, <span class="code">c2c/bn.py</span>, one test file per module in <span class="code">tests/</span>, and <span class="code">project1_causal.ipynb</span>, which runs
 every stage and writes <span class="code">results/*.csv</span> and the DAG figure. The app of Section 5 adds
-<span class="code">c2c/text.py</span>, <span class="code">c2c/demo.py</span> and <span class="code">demo/streamlit_app.py</span>. Steps:</p>
+<span class="code">c2c/text.py</span>, <span class="code">c2c/service.py</span> and <span class="code">app/streamlit_app.py</span>. Steps:</p>
 <ul class="code">
   <li>python3 -m venv .venv &amp;&amp; source .venv/bin/activate &amp;&amp; pip install -r requirements.txt</li>
   <li>pytest tests (25 tests for the pipeline, 43 with the app; 2 skip without the local model)</li>
   <li>python -m c2c.bert <span style="font-family:var(--serif)">(about 1.5 hours on an Apple M3 Pro; resumes if interrupted)</span></li>
   <li>jupyter nbconvert --to notebook --execute --inplace project1_causal.ipynb</li>
-  <li>streamlit run demo/streamlit_app.py <span style="font-family:var(--serif)">(the app of Section 5, at localhost:8501)</span></li>
+  <li>streamlit run app/streamlit_app.py <span style="font-family:var(--serif)">(the app of Section 5, at localhost:8501)</span></li>
 </ul>
 
 </main>

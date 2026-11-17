@@ -1,4 +1,4 @@
-"""Export the trained AML model and validation-tuned thresholds for the demo app.
+"""Export the trained AML model and validation-tuned thresholds for the app.
 Run from the repo root:  python scripts/export_artifacts.py"""
 import json
 import pathlib

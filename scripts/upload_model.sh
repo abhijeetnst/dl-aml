@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish the DistilBERT model and demo artifacts to a Hub model repo. Run `hf auth login` first.
+# Publish the DistilBERT model and app artifacts to a Hub model repo. Run `hf auth login` first.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

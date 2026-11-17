@@ -19,7 +19,7 @@ Row numbers count data rows (row 1 is the line after the header).
 ```bash
 python -c "from c2c.data import load_splits; t = load_splits()['test']; print(t[t.doc_id == '0d42fe0540'].premise.iloc[0])"
 ```
-Pasting the premise into the demo's Corr2Cause tab draws the PC skeleton with its v-structures.
+Pasting the premise into the app's Corr2Cause tab draws the PC skeleton with its v-structures.
 
 ## edge_review.csv: is the edge cause → effect right?
 Draw the skeleton: two variables are joined unless the premise says they are independent (given any set).
