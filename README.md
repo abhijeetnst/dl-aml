@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml/badge.svg)](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml)
 
-Live demo: https://corr2cause-dl-aml.streamlit.app (Streamlit Community Cloud)
+Live app: https://corr2cause-dl-aml.streamlit.app (Streamlit Community Cloud)
 
 Text → candidate causal triples (AML baseline vs DistilBERT) → reviewed DAG per premise →
 pgmpy Bayesian network → intervention queries. A PC-algorithm oracle is the symbolic reference.
@@ -26,7 +26,7 @@ c2c/bn.py      gold DAG + noisy-OR CPDs → 5,000 simulated rows → fit each sy
 project1_causal.py / .ipynb  runs every stage → results/*.csv, results/dag_comparison.png
 
 c2c/text.py    free English text → (cause, verb, effect) triples → DAG
-c2c/demo.py             demo logic: the three systems on a Corr2Cause row; free text → DAG → ATE
+c2c/demo.py             app logic (no UI): the three systems on a Corr2Cause row or a CSV batch; free text → DAG → ATE
 demo/streamlit_app.py   Streamlit UI over c2c/demo.py (Streamlit Community Cloud entrypoint)
 ```
 Each `c2c/` module has its own test file in `tests/`; `tests/test_demo.py` also runs the Streamlit app.
@@ -35,7 +35,7 @@ Each `c2c/` module has its own test file in `tests/`; `tests/test_demo.py` also 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest tests -q                             # 33 tests
+pytest tests -q                             # 43 tests; 2 skip without the local model
 python -m c2c.bert                          # ~1.5 h on an Apple M3 Pro (MPS); resumes if interrupted
 jupytext --to ipynb project1_causal.py
 jupyter nbconvert --to notebook --execute --inplace project1_causal.ipynb
@@ -43,10 +43,25 @@ jupyter nbconvert --to notebook --execute --inplace project1_causal.ipynb
 
 Edit `project1_causal.py`, then regenerate the `.ipynb`; never hand-edit the notebook file.
 
-## Run the demo locally
+## Using the app
+Three tabs:
+- **Corr2Cause**: pick a test-set example or type a premise and hypothesis in the Corr2Cause template, then Check.
+  AML, DistilBERT and the PC oracle each give P(valid) and a verdict; the PC pattern is drawn. Rename variables
+  shuffles the letters to show the text models' alphabetical-order shortcut.
+- **Batch**: upload a CSV with columns `premise`, `hypothesis` and an optional 0/1 `label`
+  (a sample CSV can be downloaded from the tab). Every row is scored by all three systems; rows that do not parse get a
+  message in the `error` column. With labels, precision, recall and F1 per system are shown. Results download as CSV.
+- **Free text**: English sentences with causal verbs become a graph; pick X and Y for the ATE of do(X) on Y.
+
+Limits: premise up to 6,000 characters and 6 variables; free text up to 5,000 characters and 50 causal statements;
+batch files up to 500 rows and 2 MB. Privacy: inputs are processed in memory and not stored or logged; errors are logged
+with their type and traceback only.
+
+## Run the app locally
 ```bash
 python scripts/export_artifacts.py   # optional: local artifacts/; otherwise they download from the Hub
 streamlit run demo/streamlit_app.py  # http://localhost:8501
+python scripts/screenshots.py        # with the app running: browser check + docs/img/app_*.png (needs playwright)
 ```
 The model is read from `models/distilbert-c2c` if present, else from `abhijeetnst/distilbert-c2c` on the Hub
 (override with `MODEL_REPO`).
@@ -59,13 +74,19 @@ bash scripts/upload_model.sh
 ```
 App: on share.streamlit.io choose New app → repository `abhijeetnst/dl-aml`, branch `main`, main file
 `demo/streamlit_app.py`, Python 3.12 (under Advanced settings). It installs `demo/requirements.txt` (CPU-only torch).
+Theme, the 2 MB upload cap and disabled usage stats are in `.streamlit/config.toml`.
+
+Keep-alive: Community Cloud puts apps to sleep after a period without traffic. `.github/workflows/keepalive.yml` runs
+every 6 hours (and on demand): `scripts/keepalive.py` opens the app in headless Chromium, clicks
+"Yes, get this app back up!" if it is asleep, and fails unless the app's title appears. GitHub pauses scheduled
+workflows after 60 days without repository activity; re-enable it from the Actions tab if that happens.
 
 ## Free-text extraction
 `c2c/text.py` parses English sentences with spaCy (`en_core_web_sm`) and keeps verbs from a fixed causal list
 ("causes", "leads to", "raises", "prevents", "is caused by", ...). Subject and object become cause and effect; noun
 phrases are lemmatised so "floods" and "flood" are one node. Triples become a DAG with the same review rules as
 `c2c/graph.py`: one direction per pair (the earlier sentence wins), and a cycle loses the edge from the latest
-sentence. The demo then puts a noisy-OR network on that DAG and reports the ATE for any pair.
+sentence. The app then puts a noisy-OR network on that DAG and reports the ATE for any pair.
 
 Limits:
 - Pattern-based and English only; causal verbs outside the list are ignored.
@@ -118,7 +139,7 @@ Team T043, Section D.
 
 | Member | Contribution |
 |---|---|
-| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Streamlit demo and deploy (`c2c/demo.py`, `demo/`, `scripts/`), CI, presentation and report |
+| Abhijeet | Project setup and codebase structure (`c2c/` package layout, pinned environment, test setup), data layer (`c2c/data.py`: loading, leakage-safe splits, parsers, letter shuffling), end-to-end notebook and results, free-text extraction (`c2c/text.py`), Streamlit app and deploy (`c2c/demo.py`, `demo/`, `scripts/`), CI, presentation and report |
 | Prashant Pandey | Symbolic oracle (`c2c/oracle.py`: PC algorithm, Markov equivalence class, entailment) and the label audit |
 | Divyanshi Khanka | AML baseline (`c2c/aml.py`), graph stage (`c2c/graph.py`: review gate, DAG per premise, edge metrics) and the edge review |
 | Shubham Jain | DistilBERT fine-tuning and inference (`c2c/bert.py`), resumable training |

@@ -1,0 +1,27 @@
+name: keepalive
+# Streamlit Community Cloud sleeps apps without traffic; visit the app every 6 hours and wake it if needed.
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  visit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.65.2
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/keepalive.py
+        env:
+          APP_URL: https://corr2cause-dl-aml.streamlit.app
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: keepalive-failure
+          path: keepalive_failure.png
+          if-no-files-found: ignore

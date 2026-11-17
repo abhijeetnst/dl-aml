@@ -1,0 +1,18 @@
+[theme]
+base = "light"
+primaryColor = "#2f5d8a"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f2f5f9"
+textColor = "#1f2933"
+font = "sans serif"
+
+[server]
+fileWatcherType = "none"  # the watcher imports transformers submodules and floods the log
+maxUploadSize = 2
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showErrorDetails = "none"
+toolbarMode = "viewer"
