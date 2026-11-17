@@ -23,14 +23,23 @@ def build_dag(doc: pd.DataFrame, threshold: float) -> nx.DiGraph:
         relation, x, y = parse_hypothesis(r.hypothesis)
         if relation != "direct" or r.prob < threshold or x == y:
             continue
-        rival = g.edges.get((y, x)) or g.edges.get((x, y))
-        if rival and rival["prob"] >= r.prob:
-            continue
-        g.remove_edges_from([(y, x), (x, y)])
-        g.add_edge(x, y, prob=float(r.prob), doc_id=r.doc_id, row_id=r.row_id)
+        add_one_direction(g, x, y, prob=float(r.prob), doc_id=r.doc_id, row_id=r.row_id)
+    return break_cycles(g, weakest=lambda d: d["prob"])
+
+
+def add_one_direction(g: nx.DiGraph, x, y, prob: float, **provenance) -> None:
+    """One direction per pair: the more confident edge wins; on a tie the edge already there stays."""
+    rival = g.edges.get((y, x)) or g.edges.get((x, y))
+    if rival and rival["prob"] >= prob:
+        return
+    g.remove_edges_from([(y, x), (x, y)])
+    g.add_edge(x, y, prob=prob, **provenance)
+
+
+def break_cycles(g: nx.DiGraph, weakest) -> nx.DiGraph:
+    """Drop the edge with the smallest weakest(edge_data) on each cycle until the graph is acyclic."""
     while not nx.is_directed_acyclic_graph(g):
-        u, v = min(nx.find_cycle(g), key=lambda e: g.edges[e]["prob"])
-        g.remove_edge(u, v)
+        g.remove_edge(*min(nx.find_cycle(g), key=lambda e: weakest(g.edges[e])))
     return g
 
 
