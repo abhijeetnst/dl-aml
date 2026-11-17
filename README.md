@@ -119,6 +119,14 @@ test_renamed  Symbolic oracle           0.890        1.000    0.942  65   8   0
 Mean |ATE error| over 76 intervention queries per set (5 premises): test AML 0.005, DistilBERT 0.063, oracle 0.005;
 renamed test AML 0.238, DistilBERT 0.189, oracle 0.004.
 
+## Report and slides
+- Report: `docs/T043_Project1_Report.pdf`, built from [`docs/report/report.html`](docs/report/report.html)
+  (figures in `docs/report/img/`). Edit the HTML, then run `bash scripts/build_report.sh`
+  ([script](scripts/build_report.sh)): headless Chrome prints the PDF and pypdf sets its metadata.
+- Slides: `docs/T043_Project1_Presentation.pdf`, exported from the source deck
+  [`docs/T043_Project1_Presentation.pptx`](docs/T043_Project1_Presentation.pptx) (15 slides). Edit the pptx, then
+  re-export: `soffice --headless --convert-to pdf --outdir docs docs/T043_Project1_Presentation.pptx`.
+
 ## Review sheets
 `review/edge_review.csv` and `review/label_audit_review.csv` hold a verdict and the premise evidence for each row
 (the independence statement or collider that decides it). The `draft_verdict` column was derived from that evidence

@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neuro-Symbolic Causal Inference on Corr2Cause</title>
+<meta name="author" content="Team T043">
+<meta name="description" content="DL/AML Project 1 report">
+<!-- Source of docs/T043_Project1_Report.pdf. Build: bash scripts/build_report.sh -->
+<style>
+  :root {
+    --ink: #1d2327;
+    --green: #16302f;
+    --teal: #2a9d8f;
+    --coral: #e76f51;
+    --gold: #f2cc8f;
+    --band: #eef3f1;
+    --rule: #d5ddda;
+    --muted: #6b7378;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: Arial, Helvetica, sans-serif;
+  }
+  @page {
+    size: A4;
+    margin: 62pt 62.36pt 62pt;
+    @bottom-left {
+      content: "Team T043  \00B7  Section D  \00B7  DL/AML Project 1: Neuro-Symbolic Causal Inference";
+      font: 8pt var(--sans); color: var(--muted); white-space: pre;
+      vertical-align: top; padding: 16pt 0 0 6pt;
+    }
+    @bottom-right {
+      content: counter(page);
+      font: 8pt var(--sans); color: var(--muted);
+      vertical-align: top; padding: 16pt 6pt 0 0;
+    }
+  }
+  @page cover {
+    margin: 0;
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body {
+    font: 10.3pt/15pt var(--serif); color: var(--ink);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+
+  /* ---------- cover ---------- */
+  .cover { page: cover; height: 297mm; break-after: page; position: relative; }
+  .cover .band { background: var(--green); height: 326pt; position: relative; }
+  .cover h1 {
+    position: absolute; left: 62.36pt; top: 103pt; margin: 0;
+    font: bold 25pt/31pt var(--serif); color: #fff;
+  }
+  .cover .subtitle {
+    position: absolute; left: 62.36pt; top: 264pt; width: 290pt; margin: 0;
+    font: 12pt/16pt var(--sans); color: var(--gold);
+  }
+  .cover svg { position: absolute; left: 357.2pt; top: 69pt; width: 170pt; height: 145pt; }
+  .cover .meta { position: absolute; left: 62.36pt; right: 62.36pt; top: 372pt; }
+  table.info { width: 100%; border-collapse: collapse; font: 8.8pt/11.5pt var(--sans); }
+  table.info th { text-align: left; width: 90pt; font-weight: bold; }
+  table.info th, table.info td { padding: 5pt 0 5pt 0; border-bottom: 0.6pt solid var(--rule); vertical-align: bottom; }
+  .cover h3 { margin: 30pt 0 6pt 6pt; }
+
+  /* ---------- flow ---------- */
+  main { padding: 0 0 0 6pt; }
+  h2 {
+    font: bold 14pt/18pt var(--sans); color: var(--green);
+    margin: 16pt 0 7pt; break-after: avoid;
+  }
+  main > h2:first-child { margin-top: 0; }
+  h3 {
+    font: bold 11pt/14pt var(--sans); color: var(--green);
+    margin: 11pt 0 4pt; break-after: avoid;
+  }
+  p { margin: 0 0 7pt; orphans: 3; widows: 3; }
+  a { color: inherit; text-decoration: none; }
+  .code { font-family: var(--sans); font-size: 9.8pt; }
+  ul { list-style: none; margin: 0 0 7pt; padding: 0 0 0 14pt; }
+  li { position: relative; margin: 0 0 4pt; }
+  li::before {
+    content: "\2022"; position: absolute; left: -12pt; top: 0;
+    font: 7pt/15pt var(--sans); color: var(--ink);
+  }
+  .example {
+    font: 9.5pt/13.5pt var(--sans); margin: 0 0 9pt; padding-left: 12pt; break-inside: avoid;
+  }
+  .example p { margin: 0; }
+  .keep { break-inside: avoid; }
+
+  /* tables span the full text frame, 6pt wider than paragraphs on each side */
+  .table { margin: 6pt 0 10pt -6pt; break-inside: avoid; }
+  table.data { width: 100%; border-collapse: collapse; font: 8.8pt/11.5pt var(--sans); }
+  table.data th {
+    background: var(--green); color: #fff; font-weight: bold; text-align: left;
+    padding: 5pt 5pt; vertical-align: middle;
+  }
+  table.data td { padding: 4pt 5pt; vertical-align: middle; }
+  table.data tbody tr:nth-child(even) td { background: var(--band); }
+  table.data tbody tr:last-child td { border-bottom: 0.6pt solid var(--green); }
+  .caption {
+    font: italic 8.5pt/11.5pt var(--sans); color: var(--muted); margin: 5pt 6pt 0;
+  }
+  figure { margin: 8pt 0 10pt -6pt; break-inside: avoid; }
+  figure img { display: block; width: 100%; }
+  figure.narrow img { width: 82%; margin: 0 auto; }
+  figure.shot img { width: 80%; margin: 0 auto; border: 0.6pt solid var(--rule); }
+  figure figcaption { font: italic 8.5pt/11.5pt var(--sans); color: var(--muted); margin: 5pt 6pt 0; }
+
+  .refs p { font-size: 9.3pt; line-height: 13pt; padding-left: 14pt; text-indent: -14pt; margin-bottom: 4pt; }
+  .page-break { break-before: page; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="band">
+    <h1>Neuro-Symbolic<br>Causal Inference via<br>LLM Knowledge<br>Extraction and<br>Bayesian Networks</h1>
+    <p class="subtitle">Project Report &middot; DL/AML Project 1: Causal NLP Reasoning</p>
+    <svg viewBox="0 0 170 145" aria-hidden="true">
+      <g stroke="#f2cc8f" stroke-width="1.8" fill="none">
+        <line x1="34.77" y1="30.6" x2="69.57" y2="58.77"/>
+        <line x1="135.31" y1="30.6" x2="100.51" y2="58.77"/>
+        <line x1="85.04" y1="83.2" x2="85.04" y2="102.4"/>
+      </g>
+      <g fill="#f2cc8f">
+        <polygon points="74.23,62.55 70.53,54.41 65.50,60.63"/>
+        <polygon points="95.85,62.55 104.58,60.63 99.55,54.41"/>
+        <polygon points="85.04,108.42 89.04,100.42 81.04,100.42"/>
+      </g>
+      <circle cx="25.51" cy="23.11" r="11.9" fill="#2a9d8f"/>
+      <circle cx="144.57" cy="23.11" r="11.9" fill="#2a9d8f"/>
+      <circle cx="85.04" cy="71.3" r="11.9" fill="#e76f51"/>
+      <circle cx="85.04" cy="122.32" r="11.9" fill="#2a9d8f"/>
+      <g fill="#fff" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="12" text-anchor="middle">
+        <text x="25.51" y="27.4">A</text><text x="144.57" y="27.4">B</text>
+        <text x="85.04" y="75.6">C</text><text x="85.04" y="126.6">D</text>
+      </g>
+    </svg>
+  </div>
+  <div class="meta">
+    <table class="info">
+      <tr><th>Team ID</th><td>T043</td></tr>
+      <tr><th>Section</th><td>D</td></tr>
+      <tr><th>Project</th><td>Project 1: Neuro-Symbolic Causal Inference via LLM Knowledge Extraction and Bayesian Networks</td></tr>
+      <tr><th>Faculty</th><td>Jitender Singh, Ashok Kumar</td></tr>
+      <tr><th>Evaluation</th><td>Tuesday, 27 October 2026, 4:45 PM, Room A411</td></tr>
+    </table>
+    <h3>Team members</h3>
+    <table class="data">
+      <thead><tr><th style="width:132pt">Name</th><th style="width:104pt">Enrollment no.</th><th>Email</th></tr></thead>
+      <tbody>
+        <tr><td>Abhijeet</td><td>2401010013</td><td>abhijeet.2024@nst.rishihood.edu.in</td></tr>
+        <tr><td>Prashant Pandey</td><td>2401010339</td><td>prashant.pandey2024@nst.rishihood.edu.in</td></tr>
+        <tr><td>Shubham Jain</td><td>2401010452</td><td>shubham.jain2024@nst.rishihood.edu.in</td></tr>
+        <tr><td>Rahul Kumar</td><td>2401020100</td><td>rahul.kumar2024@nst.rishihood.edu.in</td></tr>
+        <tr><td>Divyanshi Khanka</td><td>2401010159</td><td>divyanshi.khanka2024@nst.rishihood.edu.in</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<main>
+
+<h2>Abstract</h2>
+<p>We turn causal claims written in text into a graph, and then into a Bayesian network that can answer
+"what happens if we change X?" questions. Three systems decide which cause-effect claims the text
+supports: an AML baseline (six hand-made features and logistic regression), a fine-tuned DistilBERT
+model, and a symbolic oracle that runs the PC algorithm on the independence facts in the text. On the
+Corr2Cause test set (1,162 rows) AML scores an F1 of 0.617, DistilBERT 0.605 and the oracle 0.871. If
+we only shuffle the variable letters, which changes none of the causal facts, both learned models drop
+to about 0.27 while the oracle stays at 0.871. The same gap shows up in the graphs (edge F1 0.703,
+0.610 and 0.942) and in the intervention queries, where the mean ATE error of the learned models
+rises from 0.005 and 0.063 to 0.238 and 0.189. We also found four problems in the dataset itself,
+including split leakage and 44 test labels that contradict their own premise. Finally, the pipeline runs
+as a public web app with the same models and thresholds, and a free-text extractor carries it from
+Corr2Cause premises to plain English sentences (Section 5).</p>
+
+<h2>1. Introduction</h2>
+<p>The project brief asks for a system that pulls cause-effect relations out of text and then tests them in a
+Bayesian network, keeping two jobs apart: reading the text, and reasoning about causes. A text model
+can suggest plausible relations, but on its own it cannot guarantee a graph without cycles, measure
+how strong an effect is, or answer intervention questions. A graph and a Bayesian network can do all
+three, as long as the relations going in are right. So we asked two things: how well do an AML model
+and a transformer pick out causal relations, and how much do their mistakes matter once those
+relations become a graph?</p>
+<p>We used Corr2Cause [3], the dataset suggested in the brief. Each row has a premise (which variables
+are correlated and which are independent) and a hypothesis about two of them. The label is 1 when
+the hypothesis is true in every causal graph that fits the premise. Because the premise fully decides
+the answer, there is an exact symbolic solution, so we can see exactly what the learned models miss.
+What we built:</p>
+<ul>
+  <li>A pipeline from text to triples, graphs, Bayesian networks and do-queries, with 25 unit tests and
+  one notebook that reproduces every number in this report.</li>
+  <li>A fair comparison of three systems on the same rows, with thresholds tuned on validation only.</li>
+  <li>A shortcut test that shuffles variable names, and a check of four problems in the data.</li>
+  <li>A public web app at <a href="https://corr2cause-dl-aml.streamlit.app">corr2cause-dl-aml.streamlit.app</a> that
+  runs the three systems on any Corr2Cause-style input or a CSV file, and turns free English text into a
+  causal graph that answers do-queries (Section 5).</li>
+</ul>
+
+<h2>2. Data</h2>
+<h3>2.1 Corr2Cause</h3>
+<p>An example in the dataset's format, with three variables:</p>
+<div class="example">
+  <p><b>Premise:</b> Suppose there is a closed system of 3 variables, A, B and C. A correlates with C. B correlates
+  with C. However, A is independent of B.</p>
+  <p><b>Hypothesis:</b> A directly causes C.</p>
+  <p><b>Label:</b> 1 (valid). A and B are independent but both correlate with C, so C must be a common effect, A
+  &rarr; C &larr; B, in every graph that fits the premise.</p>
+</div>
+<p>The six hypothesis templates fall into four relation types: <i>direct</i> ("X directly causes Y"), <i>indirect</i> (X
+causes Y through another variable), <i>collider</i> (X and Y share a common effect) and <i>confounder</i> (X and
+Y share a common cause). Table 1 gives the split sizes. Both learned models train on the same fixed
+sample of 30,000 training rows (seed 0), which keeps DistilBERT's training to about 1.5 hours.</p>
+
+<div class="table">
+  <table class="data">
+    <thead><tr><th style="width:91pt">Split</th><th style="width:68pt">Rows</th><th style="width:102pt">Premises</th><th style="width:79pt">Positive rate</th><th>Variables per premise</th></tr></thead>
+    <tbody>
+      <tr><td>Train (full)</td><td>205,626</td><td>2,336</td><td>18.5%</td><td>4 to 6</td></tr>
+      <tr><td>Train (used)</td><td>30,000</td><td>sample of the above</td><td></td><td></td></tr>
+      <tr><td>Validation</td><td>1,026</td><td>19</td><td>12.6%</td><td>2 to 6</td></tr>
+      <tr><td>Test</td><td>1,162</td><td>21</td><td>15.5%</td><td>2 to 6</td></tr>
+    </tbody>
+  </table>
+  <p class="caption">Table 1. Corr2Cause splits after removing premises shared with test.</p>
+</div>
+
+<h3>2.2 Problems we found first</h3>
+<ul>
+  <li>Split leakage. All hypotheses about one premise belong in one split, but 3 validation premises and
+  2 training premises also appear in test. We left test alone and removed them from validation and
+  train.</li>
+  <li>A letter-order shortcut. "B directly causes A" is never true in training (0.0%), while "A directly
+  causes B" is true 35.5% of the time, because the generator always names causes first in
+  alphabetical order. To catch models that learn this, we made a second test set with the letters
+  shuffled at random inside each premise (fixed seed per premise). The causal facts do not change,
+  so a model that really reasons should score the same.</li>
+  <li>Truncation. 37.7% of training pairs are longer than DistilBERT's 512-token limit. We cut the
+  premise, never the hypothesis.</li>
+  <li>Label errors. The oracle disagrees with 44 of the 1,162 test labels (3.8%), in 12 of the 21 test
+  premises (Section 4.5).</li>
+</ul>
+
+<h2>3. Method</h2>
+<p>Strict regular-expression parsers turn each premise into its variables and independence facts, and
+each hypothesis into a triple (relation, X, Y). If a sentence does not match, the parser raises an error
+instead of guessing. Three systems then give every triple a probability of being valid.</p>
+
+<h3>3.1 AML baseline</h3>
+<p>Six features come from the parsed premise: whether X and Y are adjacent (no set makes them
+independent), whether they are correlated on their own, how many sets separate them, how many
+neighbours they share, how many variables there are, and whether X comes before Y in the alphabet.
+We kept the last one on purpose so the shuffled test could expose it. Each feature is crossed with the
+relation type, so one class-balanced logistic regression (scikit-learn) learns a separate rule for each
+relation.</p>
+
+<h3>3.2 DistilBERT</h3>
+<p>DistilBERT [6] is a smaller version of BERT [2]. We fine-tuned <span class="code">distilbert-base-uncased</span> to classify
+(premise, hypothesis) pairs with Hugging Face Transformers [8]: 2 epochs, learning rate 5e-5, weight
+decay 0.01, batch size 16, maximum length 512, seed 42, keeping the epoch with the best validation
+F1. Training takes about 1.5 hours on an Apple M3 Pro and restarts from the last checkpoint if it is
+stopped.</p>
+
+<h3>3.3 Symbolic oracle</h3>
+<p>The premise lists every independence, so the PC algorithm [7] can run exactly. We first connect every
+pair of variables that no set separates. Then, wherever X and Y are not connected but share a
+neighbour Z that is not in their separating set, we orient X &rarr; Z &larr; Y (a v-structure). Finally we list
+every way to orient the remaining edges that has no cycle and keeps exactly these v-structures. That
+list is the Markov equivalence class [9]; with at most 15 edges, brute force is fast enough. A
+hypothesis is valid when it holds in every graph in the class. The oracle has nothing to train.</p>
+
+<h3>3.4 From triples to graphs</h3>
+<p>Each system gets one threshold, picked for the best F1 on validation and never changed on test.
+"Direct" triples above the threshold become edges. The review rules then drop self loops, keep only
+the more confident direction when both appear, and remove the weakest edge of any cycle, so every
+result is a DAG. Each edge keeps its probability and the row it came from. Figure 1 shows the graphs
+for one test premise.</p>
+<figure>
+  <img src="img/fig1_dags.png" alt="Gold DAG and the DAGs built by AML, DistilBERT and the symbolic oracle for one test premise">
+  <figcaption>Figure 1. The DAG each system builds for one test premise, next to the gold DAG from the dataset labels. Green: correct
+  edge. Red: wrong edge. Dashed: missed edge.</figcaption>
+</figure>
+
+<h3>3.5 Bayesian network and do-queries</h3>
+<p>Corr2Cause has no data to fit a network on, so we simulate it. For five test premises (the first five
+with at least three gold edges, a fixed rule) we build a gold network [4] on the gold DAG with binary
+variables and noisy-OR tables (leak 0.1, strength 0.8 per parent, uniform roots). We use noisy-OR
+because pgmpy's random tables give effects close to zero, which would make every answer look right.
+We draw 5,000 rows, fit each system's DAG on the same rows with pgmpy [1] (maximum likelihood),
+and compute the average treatment effect ATE = P(Y=1 | do(X=1)) &minus; P(Y=1 | do(X=0)) [5]. We ask
+this for every pair joined by a directed path in the gold graph, in both directions. The forward
+direction has a real effect; the backward one should be zero, which catches reversed edges. That gives
+76 queries per test set.</p>
+
+<h3>3.6 Evaluation</h3>
+<p>We report positive-class precision, recall and F1 for triples, edge precision, recall and F1 for graphs,
+and mean |ATE error| for queries, all on both the official and the shuffled test set. Library versions
+and seeds are fixed, and the notebook rebuilds every table and figure. The 25 unit tests cover the
+parsers, the splits, the oracle on hand-checked premises, the review rules (including cycle breaking)
+and the Bayesian-network queries.</p>
+
+<h2>4. Results</h2>
+<h3>4.1 Relation extraction</h3>
+<div class="table">
+  <table class="data">
+    <thead><tr><th style="width:124pt">System</th><th style="width:80pt">Precision</th><th style="width:78pt">Recall</th><th style="width:82pt">F1</th><th>F1, letters shuffled</th></tr></thead>
+    <tbody>
+      <tr><td>AML baseline</td><td>0.596</td><td>0.639</td><td>0.617</td><td>0.279</td></tr>
+      <tr><td>DistilBERT</td><td>0.479</td><td>0.822</td><td>0.605</td><td>0.264</td></tr>
+      <tr><td>Symbolic oracle</td><td>0.920</td><td>0.828</td><td>0.871</td><td>0.871</td></tr>
+    </tbody>
+  </table>
+  <p class="caption">Table 2. Triple extraction on the 1,162 test rows (positive class).</p>
+</div>
+<p>The two learned models are close overall but make different mistakes (Figure 2). DistilBERT is much
+better on confounders (0.743 vs 0.000; AML never gets one right) and on indirect causes (0.657 vs
+0.452). AML is better on direct edges (0.703 vs 0.610) and colliders (0.667 vs 0.564), where its
+adjacency and separating-set features almost give the answer away. DistilBERT finds more true
+relations but also more false ones (recall 0.822, precision 0.479). The oracle is weakest on indirect
+causes (F1 0.612, recall 0.455) because of how the labels define that relation (Section 4.5).</p>
+<figure class="narrow">
+  <img src="img/fig2_f1_by_relation.png" alt="Bar chart of positive-class F1 by relation type for the three systems">
+  <figcaption>Figure 2. Positive-class F1 on the test set by relation type.</figcaption>
+</figure>
+
+<h3>4.2 The shuffle test</h3>
+<p>Shuffling the letters cuts both learned models by more than half (Figure 3): AML goes from 0.617 to
+0.279 and DistilBERT from 0.605 to 0.264, while the oracle stays at 0.871. For AML this is expected,
+since letter order is the only feature that shuffling changes. DistilBERT loses the same cue and also
+sees premises listed out of alphabetical order, which never happens in training; its indirect-cause F1
+falls to 0.038. A shuffled set re-sorted into alphabetical order would separate these two effects.</p>
+<figure class="narrow">
+  <img src="img/fig3_shuffle_ate.png" alt="Left: overall F1 on official and shuffled test sets. Right: mean absolute ATE error">
+  <figcaption>Figure 3. Left: overall F1 on the official and the shuffled test set. Right: mean absolute ATE error over 76 intervention
+  queries per set.</figcaption>
+</figure>
+
+<h3>4.3 Graphs</h3>
+<div class="table">
+  <table class="data">
+    <thead><tr><th style="width:68pt">Set</th><th style="width:100pt">System</th><th style="width:80pt">Edge precision</th><th style="width:66pt">Edge recall</th><th style="width:52pt">Edge F1</th><th>TP / FP / FN</th></tr></thead>
+    <tbody>
+      <tr><td>Test</td><td>AML baseline</td><td>0.542</td><td>1.000</td><td>0.703</td><td>65 / 55 / 0</td></tr>
+      <tr><td>Test</td><td>DistilBERT</td><td>0.505</td><td>0.769</td><td>0.610</td><td>50 / 49 / 15</td></tr>
+      <tr><td>Test</td><td>Symbolic oracle</td><td>0.890</td><td>1.000</td><td>0.942</td><td>65 / 8 / 0</td></tr>
+      <tr><td>Shuffled</td><td>AML baseline</td><td>0.200</td><td>0.369</td><td>0.259</td><td>24 / 96 / 41</td></tr>
+      <tr><td>Shuffled</td><td>DistilBERT</td><td>0.161</td><td>0.138</td><td>0.149</td><td>9 / 47 / 56</td></tr>
+      <tr><td>Shuffled</td><td>Symbolic oracle</td><td>0.890</td><td>1.000</td><td>0.942</td><td>65 / 8 / 0</td></tr>
+    </tbody>
+  </table>
+  <p class="caption">Table 3. Edge scores of the per-premise DAGs against the gold direct edges.</p>
+</div>
+<p>The oracle's graphs reach edge F1 0.942 on both test sets. On the official test set AML finds every true
+edge but adds almost as many wrong ones. DistilBERT tends to get a premise all right or all wrong: it
+finds every true edge in 9 of the 13 premises that have gold edges and none in 2, like the premise in
+Figure 1. The review rules removed nothing here. All 395 edges from the text models point from an
+earlier letter to a later one, edges that follow one order can never form a cycle, and the oracle's edges
+all come from valid DAGs. The cycle-breaking rule is still checked by the unit tests.</p>
+
+<h3>4.4 Intervention queries</h3>
+<div class="table">
+  <table class="data">
+    <thead><tr><th style="width:96pt">Set</th><th style="width:118pt">Gold structure refitted</th><th style="width:88pt">AML baseline</th><th style="width:78pt">DistilBERT</th><th>Symbolic oracle</th></tr></thead>
+    <tbody>
+      <tr><td>Test</td><td>0.004</td><td>0.005</td><td>0.063</td><td>0.005</td></tr>
+      <tr><td>Shuffled</td><td>0.005</td><td>0.238</td><td>0.189</td><td>0.004</td></tr>
+    </tbody>
+  </table>
+  <p class="caption">Table 4. Mean |ATE error| over 76 queries per set on five premises.</p>
+</div>
+<p>On the official test set AML matches the oracle (0.005) despite 55 wrong edges, while DistilBERT,
+with fewer wrong edges but 15 missing ones, is more than ten times worse (0.063). Extra edges cost
+little because the fitted network learns they carry no effect; missing or reversed edges remove or flip
+real effects. After shuffling, both learned models miss and reverse many edges and their errors jump
+to 0.238 and 0.189. The oracle stays at the floor set by finite data, which refitting the gold structure
+puts at 0.004 to 0.005.</p>
+
+<h3>4.5 Label audit and edge review</h3>
+<p>Of the 44 test rows where the oracle and the label disagree, 31 are labelled valid where the oracle says
+no, and 13 the other way round. We traced the first ten back to the premise. Five labels contradict
+every graph that fits the premise. In one case the premise says A and B are independent, also given C
+or given D, but never given E. That makes E a collider, so A &rarr; E holds in every fitting graph, yet "A
+directly causes E" is labelled invalid. The other five follow a looser meaning of the relation. For
+indirect causes, reading the label as "a directed path of length two or more" matches 385 of 388 test
+rows (99.2%), against 369 (95.1%) for our stricter reading. Validation favours the looser reading by
+only one row (333 vs 332 of 337), so we kept the definition we chose before looking at test.</p>
+<p>We also checked the 38 edges the text models proposed for three premises against the premise
+statement that decides each one. AML has 15 supported and 6 unsupported, and all 6 link connected
+variables whose direction the premise leaves open. DistilBERT has 10 supported and 7 unsupported,
+and 5 of those 7 link variables the premise says are independent. These checks use the same
+reasoning as the oracle, so they explain its verdicts rather than give an independent second opinion.</p>
+
+<h2>5. The live application</h2>
+<p>The whole pipeline is also a public web app at
+<a href="https://corr2cause-dl-aml.streamlit.app">https://corr2cause-dl-aml.streamlit.app</a>, hosted on Streamlit
+Community Cloud. Anyone can check a causal claim with the three systems side by side, score a CSV file of
+claims, or type plain English and ask an intervention question, with nothing to install. The app serves the
+models from this report unchanged, so its scores are the scores in Section 4.</p>
+
+<h3>5.1 Architecture</h3>
+<p>A thin Streamlit interface sits on <span class="code">c2c/demo.py</span>, which imports no UI code, uses the
+notebook's strict parsers and modules, and is tested directly (Table 5). The fine-tuned DistilBERT and its
+tokenizer, the fitted AML pipeline and the two thresholds live in the Hugging Face Hub model repository
+<span class="code">abhijeetnst/distilbert-c2c</span>; the app downloads them on first start and shares one copy among all
+visitors. The thresholds are the notebook's validation-tuned values, not retuned: 0.7659 for AML and 0.2176
+for DistilBERT. Community Cloud has no GPU, so DistilBERT runs on CPU-only PyTorch, 32 pairs per forward pass.</p>
+<div class="table">
+  <table class="data">
+    <thead><tr><th style="width:84pt">Part</th><th style="width:146pt">Where</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Interface</td><td>demo/streamlit_app.py</td><td>Three tabs, inputs, result tables and graph images; readable messages for bad input</td></tr>
+      <tr><td>App logic</td><td>c2c/demo.py</td><td>Parsing and limits, the three systems, batch scoring and metrics, free text &rarr; DAG &rarr; ATE</td></tr>
+      <tr><td>Free-text extractor</td><td>c2c/text.py</td><td>spaCy dependency parse &rarr; (cause, verb, effect) triples &rarr; reviewed DAG</td></tr>
+      <tr><td>Models</td><td>Hub: abhijeetnst/distilbert-c2c</td><td>DistilBERT weights and tokenizer, aml.joblib, thresholds.json</td></tr>
+      <tr><td>Hosting</td><td>Streamlit Community Cloud</td><td>Builds from the GitHub main branch with Python 3.12 and demo/requirements.txt</td></tr>
+      <tr><td>Checks</td><td>GitHub Actions</td><td>Test suite on every push and pull request; keep-alive visit every 6 hours</td></tr>
+    </tbody>
+  </table>
+  <p class="caption">Table 5. Parts of the live application.</p>
+</div>
+
+<h3>5.2 The three tabs</h3>
+<p><b>Corr2Cause check.</b> The user picks one of six real test-set rows or types a premise and hypothesis in the
+Corr2Cause template. AML, DistilBERT and the oracle each give P(valid), their threshold and a verdict; the app
+also reports the parsed triple and the size of the Markov equivalence class, and draws the PC pattern with its
+v-structures (Figure 4). A <i>Rename variables</i> button shuffles the letters with the same function that built
+the shuffled test set (Section 2.2), so a visitor can watch the text models' scores move while the oracle's
+verdict stays put.</p>
+<p><b>Batch CSV scoring.</b> The user uploads a CSV file with <span class="code">premise</span> and
+<span class="code">hypothesis</span> columns and an optional 0/1 <span class="code">label</span>; a sample file can be
+downloaded from the tab. Every row is scored by all three systems, and a row that does not parse gets a
+message in an <span class="code">error</span> column instead of stopping the run. With labels, the tab shows
+precision, recall and F1 per system. The results download as CSV (Figure 5).</p>
+<p><b>Free text.</b> The user types English sentences. The app lists the (cause, verb, effect) triples it found
+with the sentence each came from, draws the DAG with causes on the left, and, for any chosen X and Y, puts a
+noisy-OR network on that DAG (the parameters of Section 3.5) and reports
+ATE = P(Y=1 | do(X=1)) &minus; P(Y=1 | do(X=0)) (Figure 6).</p>
+<figure class="shot">
+  <img src="img/app_corr2cause.png" alt="Corr2Cause tab: hypothesis input, Check and Rename variables buttons, scores table and PC pattern">
+  <figcaption>Figure 4. Corr2Cause tab on test row test-39 (a collider). AML gives 0.696, below its threshold of 0.766;
+  DistilBERT gives 0.944 and the oracle 1, both valid. The PC pattern shows the v-structure A &rarr; C &larr; B.</figcaption>
+</figure>
+<figure class="shot">
+  <img src="img/app_batch.png" alt="Batch tab: CSV upload, per-system metrics table, per-row scores table and download button">
+  <figcaption>Figure 5. Batch tab with the three-row sample file: per-system precision, recall and F1, then each row's
+  probabilities and predictions, ready to download.</figcaption>
+</figure>
+
+<h3>5.3 Free-text extraction</h3>
+<p>The brief suggests open text as an extension, and ordinary prose needs a real parser rather than our
+template regular expressions. <span class="code">c2c/text.py</span> takes the
+dependency-pattern route: spaCy's <span class="code">en_core_web_sm</span> model parses each sentence, and a
+fixed list of causal verbs (cause, lead, result, increase, reduce, raise, lower, trigger, produce, induce, prevent,
+drive) anchors the pattern. In the active voice the subject is the cause and the direct object, or the object of
+"to" or "in" for "leads to" and "results in", is the effect; in the passive ("Y is caused by X") the agent is the
+cause. The triples then pass the same review rules as the graph stage in Section 3.4:</p>
+<ul>
+  <li>Alias normalisation: a node is its noun phrase without determiners, lowercased and lemmatised, so
+  "the storms" and "storm" become one node.</li>
+  <li>Provenance: every edge keeps its sentence, sentence number and row id.</li>
+  <li>No self loops: a triple whose cause and effect normalise to the same name is dropped.</li>
+  <li>One direction per pair: if both directions appear, the earlier sentence wins.</li>
+  <li>Cycle breaking: while a cycle remains, it loses the edge that came from the latest sentence.</li>
+</ul>
+<p>The result is always a DAG, so the Bayesian-network code from Section 3.5 runs on it unchanged.</p>
+<figure class="shot">
+  <img src="img/app_freetext.png" alt="Free text tab: extracted triples, causal graph and the ATE of do(heavy storm) on flood">
+  <figcaption>Figure 6. Free-text tab on five sentences about storms: five triples, a six-node DAG, and
+  ATE = +0.720 for do(heavy storm) on flood.</figcaption>
+</figure>
+
+<h3>5.4 Engineering</h3>
+<ul>
+  <li>Continuous integration: GitHub Actions installs the pinned environment and runs the test suite on every
+  push and pull request. The suite has grown from the 25 pipeline tests of Section 3.6 to 43: 4 for the
+  extractor and 14 for the app, including runs of the Streamlit script in Streamlit's test harness.</li>
+  <li>Keep-alive: Community Cloud puts an idle app to sleep. A scheduled workflow opens the app in a headless
+  browser every 6 hours, wakes it if needed, and fails unless the app's title appears.</li>
+  <li>Input limits: premises up to 6,000 characters and 6 variables (the oracle brute-forces the equivalence class);
+  free text up to 5,000 characters and 50 causal statements; batch files up to 500 rows and 2 MB.</li>
+  <li>Privacy and errors: inputs are processed in memory and are not stored or logged. Bad input gets a readable
+  message; other errors are logged with their type and traceback only. Usage statistics are off.</li>
+</ul>
+
+<h3>5.5 Verification</h3>
+<p>We scored 20 random test rows (seed 0) with the app's code and compared them with the notebook's
+<span class="code">results/predictions.csv</span>. All three systems agree within 0.0005 on every row (the largest gap
+is 0.00005, from rounding), so the app reproduces the numbers in this report. The live app returns the same
+scores: on test row test-39 it gives AML 0.696, DistilBERT 0.944 and oracle valid (Figure 4), matching the
+notebook's 0.6956, 0.9436 and 1.</p>
+
+<h3>5.6 Limitations of the app</h3>
+<ul>
+  <li>The Corr2Cause tab accepts only the dataset's template language, with at most 6 variables.</li>
+  <li>The free tier runs on a shared CPU and sleeps when idle, so the first visit after a sleep waits for a restart.
+  GitHub pauses scheduled workflows after 60 days without repository activity, which stops the keep-alive.</li>
+  <li>The extractor is pattern-based and English only. Verbs outside the list are ignored, each verb yields one
+  cause and one effect ("X and Y cause Z" keeps only the first noun of each side), and the small spaCy model
+  misparses some sentences ("results in" can yield no triple).</li>
+  <li>Noisy-OR assumes every edge raises its effect, so "reduces" and "prevents" are treated as positive causes,
+  and the ATE reflects the graph structure, not real-world effect sizes.</li>
+</ul>
+
+<h2>6. Discussion and conclusion</h2>
+<p>Both learned models reach an F1 near 0.61, which looks like partial understanding, but most of it
+disappears when only the variable names change. They picked up cues that happen to match the
+labels in this dataset, such as letter order, instead of the rule that links independences to causal
+structure. The oracle uses that rule and ignores names.</p>
+<p>The later stages show which mistakes matter. The graph stage always produces a DAG with a source
+for every edge, and the Bayesian network answers interventions consistently on any DAG it is given.
+It cannot add an edge that was never proposed, though: missing and reversed edges cause the ATE
+errors, while extra edges are mostly absorbed. A better hybrid would use the language model to read
+the text into symbols (variables and independence facts) and leave the causal reasoning to the graph
+algorithms.</p>
+
+<h2>7. Limitations and next steps</h2>
+<ul>
+  <li>44 test labels are disputed, so no system can reach F1 1.0 on the official labels, and small gaps
+  between systems should be read with care.</li>
+  <li>37.7% of training pairs are cut at 512 tokens. A longer-context encoder would see the whole
+  premise.</li>
+  <li>We used 30,000 of the 205,626 training rows and one seed. More data or more seeds could
+  change the AML vs DistilBERT result on the official test set.</li>
+  <li>The noisy-OR parameters are our choice, so the ATE error tests the graph structure, not
+  real-world effect sizes.</li>
+  <li>The free-text extractor (Section 5.3) is a first step to open text, not an evaluated system: we have not yet
+  measured its precision and recall on hand-labelled sentences.</li>
+  <li>Next we would build a shuffled test re-sorted into alphabetical order, train a model that outputs
+  independence facts for the oracle, and run the free-text extractor on PubMed abstracts, the open-text
+  extension suggested in the brief, scored against a labelled sample.</li>
+</ul>
+
+<h2 class="keep">Team contributions</h2>
+<div class="table">
+  <table class="data">
+    <thead><tr><th style="width:106pt">Member</th><th>Contribution</th></tr></thead>
+    <tbody>
+      <tr><td>Abhijeet</td><td>Project setup and codebase structure (package layout, pinned environment, test setup);
+        data layer (loading, leakage-safe splits, parsers, letter shuffling); end-to-end notebook and
+        results; live application (Streamlit app, batch scoring, free-text extraction), CI and deployment;
+        presentation and report</td></tr>
+      <tr><td>Prashant Pandey</td><td>Symbolic oracle (PC algorithm, Markov equivalence class, entailment) and the label audit</td></tr>
+      <tr><td>Divyanshi Khanka</td><td>AML baseline; graph stage (review gate, DAG per premise, edge metrics) and the edge review</td></tr>
+      <tr><td>Shubham Jain</td><td>DistilBERT fine-tuning and inference, resumable training</td></tr>
+      <tr><td>Rahul Kumar</td><td>Bayesian networks and intervention queries (noisy-OR gold network, pgmpy fitting, ATE)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>References</h2>
+<div class="refs">
+  <p>[1] Ankan, A., &amp; Panda, A. (2015). pgmpy: Probabilistic graphical models using Python. <i>Proceedings of the 14th
+  Python in Science Conference (SciPy)</i>.</p>
+  <p>[2] Devlin, J., Chang, M.-W., Lee, K., &amp; Toutanova, K. (2019). BERT: Pre-training of deep bidirectional
+  transformers for language understanding. <i>NAACL-HLT</i>.</p>
+  <p>[3] Jin, Z., Liu, J., Lyu, Z., Poff, S., Sachan, M., Mihalcea, R., Diab, M., &amp; Schölkopf, B. (2024). Can large
+  language models infer causation from correlation? <i>ICLR</i>.</p>
+  <p>[4] Pearl, J. (1988). <i>Probabilistic Reasoning in Intelligent Systems</i>. Morgan Kaufmann.</p>
+  <p>[5] Pearl, J. (2009). <i>Causality: Models, Reasoning, and Inference</i> (2nd ed.). Cambridge University Press.</p>
+  <p>[6] Sanh, V., Debut, L., Chaumond, J., &amp; Wolf, T. (2019). DistilBERT, a distilled version of BERT: smaller,
+  faster, cheaper and lighter. <i>arXiv:1910.01108</i>.</p>
+  <p>[7] Spirtes, P., Glymour, C., &amp; Scheines, R. (2000). <i>Causation, Prediction, and Search</i> (2nd ed.). MIT Press.</p>
+  <p>[8] Wolf, T., et al. (2020). Transformers: State-of-the-art natural language processing. <i>EMNLP: System
+  Demonstrations</i>.</p>
+  <p>[9] Verma, T., &amp; Pearl, J. (1990). Equivalence and synthesis of causal models. <i>Proceedings of the 6th Conference
+  on Uncertainty in Artificial Intelligence (UAI)</i>.</p>
+</div>
+
+<h2>Appendix: reproducing the results</h2>
+<p>Code layout: <span class="code">c2c/data.py</span> (loading, splits, parsers, renaming), <span class="code">c2c/aml.py</span>, <span class="code">c2c/bert.py</span>, <span class="code">c2c/oracle.py</span>,
+<span class="code">c2c/graph.py</span>, <span class="code">c2c/bn.py</span>, one test file per module in <span class="code">tests/</span>, and <span class="code">project1_causal.ipynb</span>, which runs
+every stage and writes <span class="code">results/*.csv</span> and the DAG figure. The app of Section 5 adds
+<span class="code">c2c/text.py</span>, <span class="code">c2c/demo.py</span> and <span class="code">demo/streamlit_app.py</span>. Steps:</p>
+<ul class="code">
+  <li>python3 -m venv .venv &amp;&amp; source .venv/bin/activate &amp;&amp; pip install -r requirements.txt</li>
+  <li>pytest tests (25 tests for the pipeline, 43 with the app; 2 skip without the local model)</li>
+  <li>python -m c2c.bert <span style="font-family:var(--serif)">(about 1.5 hours on an Apple M3 Pro; resumes if interrupted)</span></li>
+  <li>jupyter nbconvert --to notebook --execute --inplace project1_causal.ipynb</li>
+  <li>streamlit run demo/streamlit_app.py <span style="font-family:var(--serif)">(the app of Section 5, at localhost:8501)</span></li>
+</ul>
+
+</main>
+</body>
+</html>
