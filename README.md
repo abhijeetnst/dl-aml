@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml/badge.svg)](https://github.com/abhijeetnst/dl-aml/actions/workflows/tests.yml)
 
-Live demo: https://abhijeetnst-dl-aml.streamlit.app (Streamlit Community Cloud)
+Live demo: https://corr2cause-dl-aml.streamlit.app (Streamlit Community Cloud)
 
 Text → candidate causal triples (AML baseline vs DistilBERT) → reviewed DAG per premise →
 pgmpy Bayesian network → intervention queries. A PC-algorithm oracle is the symbolic reference.
