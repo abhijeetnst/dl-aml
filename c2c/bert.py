@@ -5,11 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from datasets import Dataset
-from sklearn.metrics import f1_score
-from transformers import (AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding, Trainer,
-                          TrainingArguments)
-from transformers.trainer_utils import get_last_checkpoint
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 BASE = "distilbert-base-uncased"
 MAX_LEN = 512
@@ -21,13 +17,17 @@ def encode(tok, premises, hypotheses, **kw):
     return tok(list(premises), list(hypotheses), truncation="only_first", max_length=MAX_LEN, **kw)
 
 
-def to_dataset(tok, df: pd.DataFrame) -> Dataset:
+def to_dataset(tok, df: pd.DataFrame):
+    from datasets import Dataset  # training-only imports stay lazy so inference needs no `datasets`
     ds = Dataset.from_pandas(df[["premise", "hypothesis", "label"]].reset_index(drop=True))
     return ds.map(lambda b: encode(tok, b["premise"], b["hypothesis"]), batched=True,
                   remove_columns=["premise", "hypothesis"])
 
 
 def train_bert(train_df, val_df, out_dir=MODEL_DIR, epochs=2, seed=42, max_steps=-1):
+    from sklearn.metrics import f1_score
+    from transformers import DataCollatorWithPadding, Trainer, TrainingArguments
+    from transformers.trainer_utils import get_last_checkpoint
     tok = AutoTokenizer.from_pretrained(BASE)
     model = AutoModelForSequenceClassification.from_pretrained(BASE, num_labels=2)
     args = TrainingArguments(

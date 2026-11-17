@@ -4,7 +4,6 @@ import random
 import re
 
 import pandas as pd
-from datasets import load_dataset
 
 VAR = r"\b[A-Z]\b"
 TRAIN_ROWS = 30_000  # fixed subsample so AML and DistilBERT see identical rows; full train is 205k
@@ -19,6 +18,7 @@ HYPOTHESES = [
 
 
 def load_splits() -> dict[str, pd.DataFrame]:
+    from datasets import load_dataset  # lazy: the demo parses text and never loads the dataset
     ds = load_dataset("causalnlp/corr2cause")
     out = {}
     for split in ("train", "validation", "test"):
